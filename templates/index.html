@@ -1,0 +1,40 @@
+{% extends "layout.html" %}
+{% block content %}
+    <video id="local_video" autoplay width="320" height="240"></video>
+    <canvas id="local_canvas" width="320" height="240" style="display: none"></canvas>
+{% endblock %}
+{% block js %}
+    <script type="text/javascript" charset="utf-8">
+
+        const options = {
+            transportOptions: {
+                polling: {
+                    extraHeaders: {
+                        'x-access_token': "{{ access_token }}"
+                    }
+                }
+            }
+        };
+
+        const socket = io("http://localhost:5000/image", options);
+
+        const videoElem = document.getElementById("local_video");
+        const constraint = {audio: false, video: {width: {ideal: 640}, height: {ideal: 480}}}
+        media = navigator.mediaDevices.getUserMedia(constraint)
+            .then((stream) => {
+                videoElem.srcObject = stream;
+            });
+
+        const canvasElem = document.getElementById("local_canvas");
+        const canvasCtx = canvasElem.getContext('2d');
+
+        function _canvasUpdate() {
+            canvasCtx.drawImage(videoElem, 0, 0, canvasElem.width, canvasElem.height);
+            const base64Data = canvasElem.toDataURL()
+            socket.emit('send image', {data: base64Data});
+        }
+
+        setInterval(_canvasUpdate, 100);
+        //_canvasUpdate();
+    </script>
+{% endblock %}
