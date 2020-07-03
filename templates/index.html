@@ -16,7 +16,7 @@
             }
         };
 
-        const socket = io("http://localhost:5000/image", options);
+        const socket = io("/image", options);
 
         const videoElem = document.getElementById("local_video");
         const constraint = {audio: false, video: {width: {ideal: 640}, height: {ideal: 480}}}
@@ -34,7 +34,7 @@
             socket.emit('send image', {data: base64Data});
         }
 
-        setInterval(_canvasUpdate, 100);
+        setInterval(_canvasUpdate, 10);
         //_canvasUpdate();
     </script>
 {% endblock %}

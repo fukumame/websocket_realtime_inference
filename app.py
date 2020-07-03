@@ -1,15 +1,14 @@
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO, emit, disconnect
-import queue
 import base64
 import numpy as np
 import cv2
-from threading import Thread
 from flask_httpauth import HTTPDigestAuth
 import os
 from dotenv import load_dotenv
+from engineio.payload import Payload
 
-
+Payload.max_decode_packets = 500
 load_dotenv(verbose=True)
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get("APP_SECRET")

@@ -16,7 +16,7 @@
             }
         };
 
-        const socket = io("http://localhost:5000/image", options);
+        const socket = io("/image", options);
         socket.on("return img", (data) => {
             imageElem.src = data
         })
