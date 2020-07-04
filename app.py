@@ -7,12 +7,15 @@ from flask_httpauth import HTTPDigestAuth
 import os
 from dotenv import load_dotenv
 from engineio.payload import Payload
+from threading import Thread
+from queue import Queue, Empty
 
 Payload.max_decode_packets = 500
 load_dotenv(verbose=True)
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get("APP_SECRET")
 socketio = SocketIO(app, cors_allowed_origins="*")
+image_queue = Queue()
 
 face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 auth = HTTPDigestAuth()
@@ -48,11 +51,7 @@ def parse_image(json):
 
     img_base64 = json["data"].split(',')[1]
     img = _base64_encode(img_base64)
-
-    processed_img = _detect_face(img)
-    base64_data = _base64_decode(processed_img)
-    emit('return img', base64_data, broadcast=True)
-
+    image_queue.put(img)
 
 def _detect_face(img):
     face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
@@ -83,5 +82,25 @@ def _validate_access_token():
         disconnect()
 
 
-if __name__ == '__main__':
+def start_server():
     socketio.run(app)
+
+
+def loop_emit():
+    print("start loop")
+    while True:
+        try:
+            img = image_queue.get()
+        except Empty:
+            continue
+
+        processed_img = _detect_face(img)
+        base64_data = _base64_decode(processed_img)
+        emit('return img', base64_data, broadcast=True)
+
+
+if __name__ == '__main__':
+    t = Thread(target=start_server)
+    t.start()
+    t = Thread(target=loop_emit)
+    t.start()
