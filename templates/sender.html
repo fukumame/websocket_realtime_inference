@@ -1,6 +1,11 @@
 {% extends "layout.html" %}
 {% block content %}
-    <video id="local_video" autoplay width="320" height="240"></video>
+    <div style="text-align: center; margin: 5px auto">
+        <h2 style="margin: 5px auto">Sender</h2>
+    </div>
+    <div style="text-align: center">
+        <video id="local_video" autoplay width="320" height="240"></video>
+    </div>
     <canvas id="local_canvas" width="320" height="240" style="display: none"></canvas>
 {% endblock %}
 {% block js %}
