@@ -6,3 +6,6 @@
 
 ## Demo
 ![Kapture 2020-07-04 at 15 12 55](https://user-images.githubusercontent.com/12205695/86506275-e3dabb00-be08-11ea-870f-363d89f51645.gif)
+
+## License
+MIT
