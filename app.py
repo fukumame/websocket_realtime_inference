@@ -28,7 +28,7 @@ def get_pw(username):
 @app.route('/sender')
 @auth.login_required
 def sender():
-    return render_template("index.html", access_token=os.environ.get("ACCESS_TOKEN"))
+    return render_template("sender.html", access_token=os.environ.get("ACCESS_TOKEN"))
 
 
 @app.route('/receiver')
