@@ -68,9 +68,9 @@ def _detect_face(img):
 
 
 def _base64_decode(img):
-    _, buffer = cv2.imencode(".png", img)
+    _, buffer = cv2.imencode(".jpg", img)
     base64_data = base64.b64encode(buffer)
-    base64_data = "data:image/png;base64," + base64_data.decode('utf-8')
+    base64_data = "data:image/jpg;base64," + base64_data.decode('utf-8')
     return base64_data
 
 
