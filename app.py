@@ -78,6 +78,7 @@ def get_pw(username):
 def health_check():
     return "Status OK"
 
+
 @app.route('/sender')
 @auth.login_required
 def sender():
