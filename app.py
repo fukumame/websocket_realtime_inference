@@ -77,6 +77,11 @@ def receiver():
 def test_connect():
     _validate_access_token()
 
+    referer = request.referrer
+
+    if referer is None or 'receiver' not in referer:
+        image_queue.queue.clear()
+        processed_queue.queue.clear()
 
 @socketio.on("send image", namespace="/image")
 def parse_image(json):
