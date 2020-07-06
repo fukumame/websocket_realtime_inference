@@ -7,18 +7,51 @@ from flask_httpauth import HTTPDigestAuth
 import os
 from dotenv import load_dotenv
 from engineio.payload import Payload
-from threading import Thread
 from queue import Queue, Empty
+from custom_flask import CustomFlask
 
 Payload.max_decode_packets = 500
 load_dotenv(verbose=True)
-app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get("APP_SECRET")
-socketio = SocketIO(app, cors_allowed_origins="*")
-image_queue = Queue()
+
+image_queue = Queue(maxsize=50)
+processed_queue = Queue(maxsize=50)
 
 face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 auth = HTTPDigestAuth()
+
+
+def _detect_face(img):
+    face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    faces = face_cascade.detectMultiScale(gray, 1.1, 4)
+    for (x, y, w, h) in faces:
+        cv2.rectangle(img, (x, y), (x + w, y + h), (0, 0, 255), 2)
+    return img
+
+
+def _base64_decode(img):
+    _, buffer = cv2.imencode(".jpg", img)
+    base64_data = base64.b64encode(buffer)
+    base64_data = "data:image/jpg;base64," + base64_data.decode('utf-8')
+    return base64_data
+
+
+def loop_emit():
+    print("start loop")
+    while True:
+        try:
+            img = image_queue.get()
+        except Empty:
+            continue
+
+        processed_img = _detect_face(img)
+        base64_data = _base64_decode(processed_img)
+        processed_queue.put(base64_data)
+
+
+app = CustomFlask(__name__, background_task=loop_emit)
+app.config['SECRET_KEY'] = os.environ.get("APP_SECRET")
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 
 @auth.get_password
@@ -53,20 +86,12 @@ def parse_image(json):
     img = _base64_encode(img_base64)
     image_queue.put(img)
 
-def _detect_face(img):
-    face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    faces = face_cascade.detectMultiScale(gray, 1.1, 4)
-    for (x, y, w, h) in faces:
-        cv2.rectangle(img, (x, y), (x + w, y + h), (0, 0, 255), 2)
-    return img
-
-
-def _base64_decode(img):
-    _, buffer = cv2.imencode(".png", img)
-    base64_data = base64.b64encode(buffer)
-    base64_data = "data:image/png;base64," + base64_data.decode('utf-8')
-    return base64_data
+    try:
+        base64_data = processed_queue.get()
+    except Empty:
+        return
+    else:
+        emit('return img', base64_data, broadcast=True)
 
 
 def _base64_encode(img_base64):
@@ -81,26 +106,5 @@ def _validate_access_token():
     if access_token != os.environ.get("ACCESS_TOKEN"):
         disconnect()
 
-
-def start_server():
-    socketio.run(app)
-
-
-def loop_emit():
-    print("start loop")
-    while True:
-        try:
-            img = image_queue.get()
-        except Empty:
-            continue
-
-        processed_img = _detect_face(img)
-        base64_data = _base64_decode(processed_img)
-        emit('return img', base64_data, broadcast=True)
-
-
 if __name__ == '__main__':
-    t = Thread(target=start_server)
-    t.start()
-    t = Thread(target=loop_emit)
-    t.start()
+    socketio.run(app, debug=False)
