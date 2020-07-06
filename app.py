@@ -36,6 +36,19 @@ def _base64_decode(img):
     return base64_data
 
 
+def _base64_encode(img_base64):
+    img_binary = base64.b64decode(img_base64)
+    jpg = np.frombuffer(img_binary, dtype=np.uint8)
+    img = cv2.imdecode(jpg, cv2.IMREAD_COLOR)
+    return img
+
+
+def _validate_access_token():
+    access_token = request.headers.environ.get('HTTP_X_ACCESS_TOKEN')
+    if access_token != os.environ.get("ACCESS_TOKEN"):
+        disconnect()
+
+
 def loop_emit():
     print("start loop")
     while True:
@@ -83,6 +96,7 @@ def test_connect():
         image_queue.queue.clear()
         processed_queue.queue.clear()
 
+
 @socketio.on("send image", namespace="/image")
 def parse_image(json):
     _validate_access_token()
@@ -98,18 +112,6 @@ def parse_image(json):
     else:
         emit('return img', base64_data, broadcast=True)
 
-
-def _base64_encode(img_base64):
-    img_binary = base64.b64decode(img_base64)
-    jpg = np.frombuffer(img_binary, dtype=np.uint8)
-    img = cv2.imdecode(jpg, cv2.IMREAD_COLOR)
-    return img
-
-
-def _validate_access_token():
-    access_token = request.headers.environ.get('HTTP_X_ACCESS_TOKEN')
-    if access_token != os.environ.get("ACCESS_TOKEN"):
-        disconnect()
 
 if __name__ == '__main__':
     socketio.run(app, debug=False)
