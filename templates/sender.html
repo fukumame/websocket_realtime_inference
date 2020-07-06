@@ -35,7 +35,7 @@
 
         function _canvasUpdate() {
             canvasCtx.drawImage(videoElem, 0, 0, canvasElem.width, canvasElem.height);
-            const base64Data = canvasElem.toDataURL()
+            const base64Data = canvasElem.toDataURL("image/jpg")
             socket.emit('send image', {data: base64Data});
         }
 
